@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="author" content="Jaroslaw Tomasz Zolkiewski">
+	<title>Pixel Art Designer</title>
+	<style>
+		body{
+			text-align: center;
+			background: radial-gradient(dimgray,silver,white,silver,beige);
+			margin: 0px;
+			user-select: none;
+			font-family: Arial, sans-serif;
+			font-weight: bold;}
+		fieldset{
+			background-color: cornsilk;
+			text-align: center;} 
+		td{
+			border: 1px solid darkslategray;
+			display: inline-block;
+			border-radius: 5px;}
+		table{
+			display: inline-block;}
+		input[type=color]{
+			width: 60px;
+			border: 0px;
+			padding: 0px;
+			display: block;}
+		button{
+			background-color: white;
+			border: 1px;
+			border-color: dimgray;
+			border-style: solid;
+			font-weight: bold;
+			font-size: 16px;}
+		button:hover{
+			background: radial-gradient(gold,silver);}
+	</style>
+</head>
+<body>
+	<table>
+		<tr>
+			<td>
+				<fieldset>
+					<legend>Colors</legend>
+					<table id="clChoice"></table>
+				</fieldset>
+				<fieldset id="toolset">
+					<legend>Tools</legend>
+					<button onmousedown="setFun(0,event)">  Pen  <br>[ M ]</button>
+					<button onmousedown="setFun(1,event)">Color<br>Picker [ P ]</button><br>
+					<button onmousedown="setFun(2,event)">Eraser<br>[6 ]</button>
+					<button onmousedown="setFun(3,event)">Cut<br>[ 7 ]</button>
+					<button onmousedown="setFun(4,event)">Paste<br>[ 8 ]</button>
+				</fieldset>
+			</td>
+			<td style="background-image:conic-gradient(black,white,white,white,black,white,white,white,black,white,white,white,black,white,white,white,black)">
+				<canvas id="canv" height="800" width="800" style="margin:10px;background-size:cover;"></canvas>
+			</td>
+			<td>
+				<fieldset id="transparency">
+					<legend>Transparency</legend>
+					<button onclick="setOpac(0)">none [ 1 ]</button><br>
+					<button onclick="setOpac(1)">25% [ 2 ]</button>
+					<button onclick="setOpac(2)">50% [ 3 ]</button><br>
+					<button onclick="setOpac(3)">75% [ 4 ]</button>
+					<button onclick="setOpac(4)">full [ 5 ]</button>
+				</fieldset>
+				<fieldset>
+					<legend>Editing</legend>
+					<table>
+						<tr>
+							<td style="border-style:none;">
+								<button onclick="undo()">Undo</button><br>
+								<button onclick="transform(0,0,0,1,1,0,-1)">move up</button><br>
+								<button onclick="transform(0,0,0,1,1,-1,0)">left</button>
+								<button onclick="transform(0,0,0,1,1,1,0)">right</button><br>
+								<button onclick="transform(0,0,0,1,1,0,1)">move down</button>
+							</td>
+							<td style="border-style:none;">
+								<button onclick="transform(0,yRes,-1,1,1,0,0)">rotate-L</button><br>
+								<button onclick="transform(xRes,0,1,1,1,0,0)">rotate-R</button></button><br>
+								<button onclick="transform(0,0,0,-1,1,0,0)">flip-H</button><br>
+								<button onclick="transform(0,0,0,1,-1,0,0)">flip-V</button>
+							</td>
+						</tr>
+					</table>
+				</fieldset>
+				<fieldset>
+					<legend>Image/Colors/Size</legend>
+					<button onclick="saveToURL()">Save to URL</button>
+				</fieldset>
+				<fieldset>
+					<legend>Load Image</legend>
+					<input id="imgLoader" type="file" accept="image/*">
+				</fieldset>
+				<fieldset style="background:radial-gradient(#003344,aquamarine,dimgray);">
+					<legend>Save Image</legend>
+					<canvas width="32" height="32" id="pict" style="background-color:white;"></canvas><br>
+					file name:<br>
+					<input id="filename" value="image" size="7">.<input id="fileext" value="png" size="7"><br>
+					quality:<br>
+					<input id="fileq" value="1.0" size="5"><br>
+					<button onclick="saveImg(canv)">save big image</button><br>
+					<button onclick="saveImg(pict)">save small image</button>
+				</fieldset>
+				<fieldset id="sizesettings">
+					<legend>Dimensions</legend>
+					image resolution:<br>
+					x:<input id="xResIn" size="2">
+					y:<input id="yResIn" size="2"><br>
+					pixel size:<br>
+					x:<input id="xPSIn" size="2">
+					y:<input id="yPSIn" size="2"><br>
+					<button onclick="init()">resize</button>
+				</fieldset>
+			</td>
+		</tr>
+	</table>
+</body>
+<script>
+const LG = "linear-gradient(125deg,"
+cnv = canv.getContext("2d"), pic = pict.getContext("2d",{alpha:true,willReadFrequently:true})
+opaci = "ff,bf,7f,3f,00".split(",")
+sOp = 0, sCl = 0, sPix = pic.createImageData(1,1), _ = Math.floor, ceil = Math.ceil, images = []
+setPix=()=>{
+	for(let i=0; i<4; i++)
+		sPix.data[i] = parseInt((i)?(i%3)?(i%2)?fS.slice(3,5):fS.slice(5,7):opaci[sOp]:fS.slice(1,3),16)
+	for(let i in bPix.data)
+		bPix.data[i] = sPix.data[i%4]
+}
+setColor=(i)=>{
+	clBtns[sCl].style.background = "white"
+	fS = clInputs[i].value
+	clBtns[i].style.background = LG + "dimgray,lightgreen,silver)"
+	setPix(sCl=i)
+}
+setOpac=(i)=>{
+	opBtns[sOp].style.background = "white"
+	opBtns[i].style.background = LG + "dimgray,lightgreen,silver)"
+	setPix(sOp=i)
+}
+init=()=>{
+	xRes = parseInt(xResIn.value)
+	yRes = parseInt(yResIn.value)
+	xPS = parseInt(xPSIn.value)
+	yPS = parseInt(yPSIn.value)
+	cWidth = xRes*xPS
+	cHeight = yRes*yPS
+	bPix = cnv.createImageData(xPS,yPS)
+	canv.width = cWidth
+	canv.height = cHeight
+	pict.width = xRes
+	pict.height = yRes
+	ran = 140
+	for(let i=0; i<cWidth/4; i++)
+		for(let j=0; j<cHeight/4; j++){
+			ran = (ran<120)?120:(ran>245)?245:ran+Math.round(Math.random()*10-5)
+			cnv.fillStyle = "#" + ran.toString(16) + ran.toString(16) + (ran-20).toString(16)
+			cnv.fillRect(4*i,4*j,4,4)
+		}
+	canv.style.background = "url(" + canv.toDataURL() + ")"
+	cnv.clearRect(0,0,cWidth,cHeight)
+	setColor(sCl)
+	setOpac(sOp)
+	cOffsetX = canv.getClientRects()[0].left + window.scrollX
+	cOffsetY = canv.getClientRects()[0].top + window.scrollY
+	images[0] && copyToMain(pic.putImageData(images[images.length-1],0,0))
+}
+(()=>{
+	document.body.style.width = (window.innerWidth > 1450 ? window.innerWidth : 1920) + "px"
+	document.body.style.height = window.innerHeight + "px"
+	let tr, td, col, btn
+	let params = new URL(document.location).searchParams
+	xResIn.value = params.get("xRes") || 32
+	yResIn.value = params.get("yRes") || 32
+	xPSIn.value = params.get("xPS") || 25
+	yPSIn.value = params.get("yPS") || 25
+	layout = params.get("layout") || "qweasdyxcrtzfghvbnuiojkl"
+	let src = params.get("image")
+	let colorlist = (params.get("colors") || "000000,ffffff,808080,ff0000,00ff00,0000ff,"+
+	"ffff00,ff00ff,00ffff,00b81f,1d8124,076105,5860d0,2f38b6,1a189a,d35a5a,981616,bc105b,"+
+	"c9b00d,f6f877,f5f5dc,c7d0d1,b3b3b3,888e96").split(",")
+	for(let i in layout){
+		i%3 || (tr = document.createElement("tr"))
+		td = document.createElement("td")
+		col = document.createElement("input")
+		col.type = "color"
+		col.value = "#" + colorlist[i]
+		col.onchange = function(){setColor(clInputs.indexOf(this))}
+		btn = document.createElement("button")
+		btn.innerText = "[ " + layout[i].toUpperCase() + " ]"
+		btn.onclick = function(){setColor(clBtns.indexOf(this))}
+		td.appendChild(col)
+		td.appendChild(btn)
+		tr.appendChild(td);
+		(i+1)%3 || clChoice.appendChild(tr)
+	}
+	tlButtons = [...toolset.querySelectorAll("button")]
+	clInputs = [...clChoice.querySelectorAll("input")]
+	clBtns = [...clChoice.querySelectorAll("button")]
+	opBtns = [...transparency.querySelectorAll("button")]
+	init()
+	if(src){
+		src = src.replaceAll(" ","+")
+		let im = new Image()
+		im.onload=()=>copyToMain(pic.drawImage(im,0,0))
+		im.src = src
+	}
+})()
+saveImg=(c)=>{
+	let a = document.createElement("a")
+	let f = fileext.value
+	a.download = filename.value + "." + f
+	a.href = c.toDataURL("image/"+(f=="jpg"?"jpeg":f), parseFloat(fileq.value))
+	a.remove(a.click())
+}
+draw=(x,y)=>{
+	cnv.putImageData(bPix,_(x/xPS)*xPS,_(y/yPS)*yPS)
+	pic.putImageData(sPix,_(x/xPS),_(y/yPS))
+}
+pick=(x,y)=>{
+	let im = pic.getImageData(_(x/xPS),_(y/yPS),1,1)
+	let c = "#"
+	for(let i=0; i<3; i++){
+		let s = im.data[i].toString(16)
+		s.length==1 && (s = "0" + s)
+		c += s
+	}
+	clInputs[sCl].value = c
+	setColor(sCl)
+}
+erase=(x,y)=>{
+	cnv.clearRect(_(x/xPS)*xPS,_(y/yPS)*yPS,xPS,yPS)
+	pic.clearRect(_(x/xPS),_(y/yPS),1,1)
+}
+cut=(x,y,m)=>{
+	if(m==1){
+		cImage = cnv.getImageData(0,0,cWidth,cHeight)
+		sAnchorX = x, sAnchorY = y
+	}else if(m){
+		cnv.putImageData(cImage,0,0)
+		cnv.strokeRect(sAnchorX,sAnchorY,x-sAnchorX,y-sAnchorY)
+	}else{
+		let [tx,dx] = sAnchorX<x?[_(sAnchorX/xPS),ceil(x/xPS)-_(sAnchorX/xPS)]:[_(x/xPS),ceil(sAnchorX/xPS)-_(x/xPS)]
+		let [ty,dy] = sAnchorY<y?[_(sAnchorY/yPS),ceil(y/yPS)-_(sAnchorY/yPS)]:[_(y/yPS),ceil(sAnchorY/yPS)-_(y/yPS)]
+		copyToMain(pImage=pic.getImageData(tx,ty,dx,dy),pic.clearRect(tx,ty,dx,dy))
+	}
+}
+paste=(x,y)=>{
+	let len = pImage.data.length, o = parseInt(opaci[sOp],16)
+	for(let i=3; i<len; i+=4)
+		pImage.data[i] && (pImage.data[i] = o)
+	pImage && copyToMain(pic.putImageData(pImage,_(x/xPS),_(y/yPS)))
+}
+tools = [fun=draw,pick,rCFun=erase,cut,paste]
+transform=(tx,ty,r,h,v,x,y)=>{
+	images.push(pic.getImageData(0,0,xRes,yRes))
+	let im = new Image()
+	im.src = pict.toDataURL()
+	im.onload = () => {
+		pic.clearRect(0,0,xRes,yRes)
+		pic.save()
+		pic.translate(tx,ty)
+		pic.rotate(Math.PI/2*r)
+		pic.translate(xRes/2*(1-h),yRes/2*(1-v))
+		pic.scale(h,v)
+		pic.drawImage(im,x,y)
+		copyToMain(pic.restore())
+	}
+}
+(setFun=(n,e)=>{
+	e.button ? rCFun = tools[n] : fun = tools[n]
+	for(let b of tlButtons)
+		b.style.background = "white"
+	if(fun==rCFun)
+		tlButtons[tools.indexOf(fun)].style.background = LG + "#5555ff,red)"
+	else{
+		for(let a of [[rCFun,LG+"silver,red,white)"],[fun,LG+"white,#5555ff,beige)"]])
+			tlButtons[tools.indexOf(a[0])].style.background = a[1]
+	}
+})(0,{button:0})
+setFun(2,{button:2})
+saveToURL=()=>{
+	let s = document.location.origin + document.location.pathname
+	s += "?layout=" + layout
+	s += "&xRes=" + xRes + "&yRes=" + yRes + "&xPS=" + xPS + "&yPS=" + yPS + "&colors="
+	for(let i=0; i<24; i++){
+		s += clInputs[i].value.slice(1,7)
+		if(i<23) s += ","
+	}
+	window.location.href = s + "&image=" + pict.toDataURL()
+}
+copyToMain=()=>{
+	let im = pic.getImageData(0,0,xRes,yRes)
+	let d = im.data
+	cnv.clearRect(0,0,cWidth,cHeight)
+	for(let i=0; i<xRes; i++)
+		for(let j=0; j<yRes; j++){
+			let im2 = cnv.createImageData(xPS,yPS)
+			for(let k in im2.data)
+				im2.data[k] = (k%4)?(k%4-3)?(k%4-2)?d[(xRes*j+i)*4+1]:d[(xRes*j+i)*4+2]:d[(xRes*j+i)*4+3]:d[(xRes*j+i)*4]
+			cnv.putImageData(im2,xPS*i,yPS*j)
+	}
+}
+undo=()=>{
+	if(images[0]){
+		let lastimg = images[images.length-1], w = lastimg.width, h = lastimg.height
+		if(xRes!=w || yRes!=h){
+			xResIn.value = w.toString()
+			yResIn.value = h.toString()
+			init()
+		}
+		copyToMain(pic.putImageData(images.pop(),0,0))
+	}
+}
+keypressing=(e)=>{
+	layout.includes(e.key) ? setColor(layout.indexOf(e.key)):
+	e.key=="m" ? setFun(0,0):
+	e.key=="p" ? setFun(1,0):
+	e.key=="6" ? setFun(2,0):
+	e.key=="7" ? setFun(3,0):
+	e.key=="8" ? setFun(4,0):
+	"12345".includes(e.key) && setOpac(parseInt(e.key)-1)
+}
+[...document.querySelectorAll("button")].forEach(btn=>btn.oncontextmenu=(e)=>e.preventDefault())
+canv.oncontextmenu=(e)=>e.preventDefault()
+for(let t of [...sizesettings.querySelectorAll("input")]){
+	t.onfocus=()=>document.onkeypress=null
+	t.onblur=()=>document.onkeypress=keypressing
+}
+canv.onmousedown=(e)=>{
+	images.push(pic.getImageData(0,0,xRes,yRes))
+	e.button ? rCFun(e.offsetX,e.offsetY,1):
+		fun(e.offsetX,e.offsetY,1)
+}
+canv.onmousemove=(e)=>{
+	e.buttons==1 ? fun(e.offsetX,e.offsetY,2):
+		e.buttons==2 && rCFun(e.offsetX,e.offsetY,2)
+}
+canv.onmouseup=(e)=>{
+	e.button ? rCFun(e.offsetX,e.offsetY,0):
+		fun(e.offsetX,e.offsetY,0)
+}
+canv.ontouchstart=(e)=>{
+	images.push(pic.getImageData(0,0,xRes,yRes))
+	fun(e.touches[0].pageX-cOffsetX,e.touches[0].pageY-cOffsetY,1)
+}
+canv.ontouchmove=(e)=>{
+	e.preventDefault()
+	fun(e.touches[0].pageX-cOffsetX,e.touches[0].pageY-cOffsetY,2)
+}
+canv.ontouchend=(e)=>{
+	fun(e.changedTouches[0].pageX-cOffsetX,e.changedTouches[0].pageY-cOffsetY,0)
+}
+document.onkeypress = keypressing
+imgLoader.oninput = function(){
+	pic.clearRect(0,0,xRes,yRes)
+	if(this.files && this.files[0]){
+		let fr = new FileReader()
+		fr.onload=(e)=>{
+			let im = new Image()
+			im.onload=()=>copyToMain(imgLoader.value="",pic.drawImage(im,0,0,xRes,yRes))
+			im.src = e.target.result
+		}
+		fr.readAsDataURL(this.files[0])
+	}
+}
+</script>
+</html>
